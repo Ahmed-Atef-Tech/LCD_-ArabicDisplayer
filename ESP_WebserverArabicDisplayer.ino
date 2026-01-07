@@ -5,8 +5,8 @@
 #include "LiquidCrystalArabic_I2C.h"
 
 // ---------------- إعدادات الشبكة ----------------
-const char* ssid = "TE-WE";
-const char* password = "A@hh01155582232";
+const char* ssid = "Your_SSID";
+const char* password = "Your_Password";
 
 IPAddress local_IP(192, 168, 1, 200);
 IPAddress gateway(192, 168, 1, 1);
