@@ -5,8 +5,8 @@
 #include "LiquidCrystalArabic_I2C.h"
 
 // ---------------- إعدادات الشبكة ----------------
-const char* ssid = "Your_SSID";
-const char* password = "Your_Password";
+const char* ssid = "TE-WE";
+const char* password = "A@hh01155582232";
 
 IPAddress local_IP(192, 168, 1, 200);
 IPAddress gateway(192, 168, 1, 1);
@@ -20,14 +20,14 @@ ESP8266WebServer server(80);
 
 struct Message {
   String text;
-  int duration; // بالمللي ثانية
+  int duration; 
 };
 
 std::vector<Message> playlist;
 int currentIndex = 0;
 unsigned long previousMillis = 0;
 
-// ---------------- HTML الصفحة ----------------
+// ---------------- HTML الصفحة (تم تعديل الـ CSS هنا) ----------------
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -38,9 +38,24 @@ const char index_html[] PROGMEM = R"rawliteral(
   <style>
     body { font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; }
     .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    textarea { width: 100%; height: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; font-family: monospace; direction: ltr; text-align: left; }
+    
+    /* التعديل هنا لدعم الكتابة من اليمين */
+    textarea { 
+      width: 100%; 
+      height: 250px; 
+      padding: 15px; 
+      border: 2px solid #ddd; 
+      border-radius: 8px; 
+      font-size: 18px; 
+      font-family: 'Courier New', monospace; 
+      direction: rtl;       /* اتجاه من اليمين لليسار */
+      text-align: right;    /* محاذاة النص لليمين */
+      box-sizing: border-box;
+    }
+    
+    textarea:focus { border-color: #007bff; outline: none; }
     button { width: 100%; padding: 12px; margin-top: 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 18px; font-weight: bold; background-color: #007bff; color: white; }
-    .note { font-size: 0.85em; color: #666; margin-bottom: 10px; text-align: right; }
+    .note { font-size: 0.9em; color: #555; margin-bottom: 15px; text-align: right; background: #e9ecef; padding: 10px; border-radius: 5px; }
     .error { color: #dc3545; font-weight: bold; display: none; margin-top: 10px; }
   </style>
   <script>
@@ -54,13 +69,13 @@ const char index_html[] PROGMEM = R"rawliteral(
         var parts = line.split(',');
         if (parts.length < 2) {
           errorDiv.style.display = "block";
-          errorDiv.innerText = "خطأ في السطر " + (i+1) + ": يجب وضع فاصلة.";
+          errorDiv.innerText = "خطأ في السطر " + (i+1) + ": تأكد من وجود الفاصلة (،)";
           return false;
         }
         var txt = parts.slice(1).join(',').trim();
         if (txt.length > 16) {
           errorDiv.style.display = "block";
-          errorDiv.innerText = "تنبيه السطر " + (i+1) + ": النص طويل جداً.";
+          errorDiv.innerText = "تنبيه السطر " + (i+1) + ": النص ('" + txt + "') أطول من 16 حرف.";
           return false;
         }
       }
@@ -71,9 +86,13 @@ const char index_html[] PROGMEM = R"rawliteral(
 <body>
   <div class="container">
     <h2>تعديل محتوى الشاشة</h2>
-    <div class="note">الصيغة: الوقت بالثانية , النص</div>
+    <div class="note">
+      <strong>طريقة الكتابة:</strong><br>
+      الثواني , النص العربي<br>
+      مثال: 2.5 , بسم الله
+    </div>
     <form action="/save" method="POST" onsubmit="return validateAndSend()">
-      <textarea id="content" name="data" placeholder="مثال: 1.5, واصبر فإن">%CURRENT_DATA%</textarea>
+      <textarea id="content" name="data" placeholder="اكتب هنا..">%CURRENT_DATA%</textarea>
       <div id="errorMsg" class="error"></div>
       <button type="submit">حفظ وتحديث الشاشة</button>
     </form>
@@ -134,7 +153,6 @@ void handleSave() {
     saveRawText(data);
     parseAndLoadPlaylist(data);
     
-    // الحل: العرض الفوري وتصفير العداد
     currentIndex = 0;
     if (!playlist.empty()) {
       lcd.clear();
@@ -165,7 +183,6 @@ void setup() {
 
   while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
 
-  // تشغيل أول سطر فوراً عند الإقلاع
   if (!playlist.empty()) {
     lcd.clear();
     lcd.setCursorArabic(0, 0);
@@ -184,13 +201,10 @@ void loop() {
 
   if (!playlist.empty()) {
     unsigned long currentMillis = millis();
-    // التحقق هل انتهى وقت الكلمة الحالية؟
     if (currentMillis - previousMillis >= (unsigned long)playlist[currentIndex].duration) {
       previousMillis = currentMillis;
-      
       currentIndex++;
       if (currentIndex >= (int)playlist.size()) currentIndex = 0;
-      
       lcd.clear();
       lcd.setCursorArabic(0, 0);
       lcd.printArabic(playlist[currentIndex].text, false, true);
